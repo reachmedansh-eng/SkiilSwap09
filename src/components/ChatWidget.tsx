@@ -202,24 +202,53 @@ export function ChatWidget() {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="relative rounded-full w-16 h-16 shadow-2xl pixel-corners bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 overflow-hidden"
+          className="relative w-16 h-16 shadow-2xl pixel-corners bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 overflow-hidden p-0"
+          style={{
+            clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'
+          }}
         >
-          <MessageSquare className="w-6 h-6 relative z-10" />
-          
-          {/* Unread message badge */}
-          {unreadCount > 0 && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-20 border-2 border-background"
+          {/* Pixelated chat bubble icon with conditional fill */}
+          <div className="relative w-full h-full flex items-center justify-center z-10">
+            <svg 
+              width="32" 
+              height="32" 
+              viewBox="0 0 32 32" 
+              className="relative z-10"
+              style={{ imageRendering: 'pixelated' }}
             >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </motion.div>
-          )}
+              {/* Outer bubble - always white stroke */}
+              <rect x="4" y="4" width="24" height="16" fill="none" stroke="white" strokeWidth="2"/>
+              
+              {/* Inner fill - red if unread, transparent if not */}
+              <rect 
+                x="6" 
+                y="6" 
+                width="20" 
+                height="12" 
+                fill={unreadCount > 0 ? "#ef4444" : "none"}
+                className="transition-colors duration-300"
+              />
+              
+              {/* Speech bubble tail */}
+              <path 
+                d="M 12 20 L 12 24 L 16 20 Z" 
+                fill={unreadCount > 0 ? "#ef4444" : "none"}
+                stroke="white" 
+                strokeWidth="2"
+                strokeLinejoin="miter"
+                className="transition-colors duration-300"
+              />
+              
+              {/* Pixel dots inside bubble (always white) */}
+              <rect x="10" y="10" width="2" height="2" fill="white"/>
+              <rect x="15" y="10" width="2" height="2" fill="white"/>
+              <rect x="20" y="10" width="2" height="2" fill="white"/>
+            </svg>
+          </div>
           
           {/* Animated racing lines inside button */}
           <motion.div
-            className="absolute inset-0 opacity-30"
+            className="absolute inset-0 opacity-20"
             animate={{
               background: [
                 'linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)',
@@ -237,15 +266,24 @@ export function ChatWidget() {
             }}
           />
           
-          {/* Pulsing glow effect */}
+          {/* Pulsing glow effect - intensifies when unread */}
           <motion.div
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0"
+            style={{
+              clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'
+            }}
             animate={{
-              boxShadow: [
-                '0 0 0 0 rgba(6, 182, 212, 0.7)',
-                '0 0 0 10px rgba(6, 182, 212, 0)',
-                '0 0 0 0 rgba(6, 182, 212, 0)'
-              ]
+              boxShadow: unreadCount > 0 
+                ? [
+                    '0 0 0 0 rgba(239, 68, 68, 0.7)',
+                    '0 0 0 10px rgba(239, 68, 68, 0)',
+                    '0 0 0 0 rgba(239, 68, 68, 0)'
+                  ]
+                : [
+                    '0 0 0 0 rgba(6, 182, 212, 0.7)',
+                    '0 0 0 10px rgba(6, 182, 212, 0)',
+                    '0 0 0 0 rgba(6, 182, 212, 0)'
+                  ]
             }}
             transition={{
               duration: 2,
