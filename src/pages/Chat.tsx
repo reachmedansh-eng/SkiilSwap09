@@ -67,8 +67,10 @@ export default function Chat() {
     if (!selectedUser || !currentUserId) return;
 
     fetchMessages(selectedUser.id);
+    markMessagesAsRead(selectedUser.id); // Mark as read when opening chat
 
     // Set up real-time subscription
+  
     const channel = supabase
       .channel('messages')
       .on(
@@ -81,6 +83,7 @@ export default function Chat() {
         },
         (payload) => {
           setMessages((prev) => [...prev, payload.new as Message]);
+          markMessagesAsRead(selectedUser.id); // Auto-mark as read
           scrollToBottom();
         }
       )
@@ -139,19 +142,18 @@ export default function Chat() {
       });
     } else if (data) {
       setMessages(data);
-      
-      // Mark received messages as read
-      const unreadIds = data
-        .filter(m => m.receiver_id === currentUserId && !m.read)
-        .map(m => m.id);
-      
-      if (unreadIds.length > 0) {
-        await supabase
-          .from("messages")
-          .update({ read: true })
-          .in("id", unreadIds);
-      }
     }
+  };
+
+  const markMessagesAsRead = async (otherUserId: string) => {
+    if (!currentUserId) return;
+    
+    await supabase
+      .from("messages")
+      .update({ read: true })
+      .eq("receiver_id", currentUserId)
+      .eq("sender_id", otherUserId)
+      .eq("read", false);
   };
 
   const sendMessage = async () => {

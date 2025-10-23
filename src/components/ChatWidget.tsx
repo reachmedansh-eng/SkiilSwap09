@@ -33,19 +33,10 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setCurrentUserId(session.user.id);
-        fetchUsers(session.user.id);
-      }
-    };
-    init();
-  }, []);
-
+  // Helper functions defined first
   const fetchUsers = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
@@ -53,6 +44,32 @@ export function ChatWidget() {
       .neq("id", userId)
       .limit(10);
     if (data) setUsers(data);
+  };
+
+  const fetchUnreadCount = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    const { count } = await supabase
+      .from("messages")
+      .select("*", { count: 'exact', head: true })
+      .eq("receiver_id", session.user.id)
+      .eq("read", false);
+    
+    if (count !== null) setUnreadCount(count);
+  };
+
+  const markMessagesAsRead = async () => {
+    if (!selectedUser || !currentUserId) return;
+    
+    await supabase
+      .from("messages")
+      .update({ read: true })
+      .eq("receiver_id", currentUserId)
+      .eq("sender_id", selectedUser.id)
+      .eq("read", false);
+    
+    fetchUnreadCount();
   };
 
   const fetchMessages = async (otherUserId: string) => {
@@ -88,9 +105,61 @@ export function ChatWidget() {
     }
   };
 
+  // Effects
+  useEffect(() => {
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setCurrentUserId(session.user.id);
+        fetchUsers(session.user.id);
+        // Fetch initial unread count
+        await fetchUnreadCount();
+      }
+    };
+    init();
+  }, []);
+
+  // Real-time subscription for unread count
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const channel = supabase
+      .channel('unread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${currentUserId}`
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${currentUserId}`
+        },
+        () => {
+          fetchUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId]);
+
   useEffect(() => {
     if (selectedUser) {
       fetchMessages(selectedUser.id);
+      markMessagesAsRead(); // Mark as read when opening chat
       
       // Subscribe to new messages
       const channel = supabase
@@ -103,7 +172,10 @@ export function ChatWidget() {
             table: 'messages',
             filter: `receiver_id=eq.${currentUserId}`,
           },
-          () => fetchMessages(selectedUser.id)
+          () => {
+            fetchMessages(selectedUser.id);
+            markMessagesAsRead(); // Auto-mark as read when chat is open
+          }
         )
         .subscribe();
 
@@ -133,6 +205,17 @@ export function ChatWidget() {
           className="relative rounded-full w-16 h-16 shadow-2xl pixel-corners bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 overflow-hidden"
         >
           <MessageSquare className="w-6 h-6 relative z-10" />
+          
+          {/* Unread message badge */}
+          {unreadCount > 0 && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-20 border-2 border-background"
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </motion.div>
+          )}
           
           {/* Animated racing lines inside button */}
           <motion.div
