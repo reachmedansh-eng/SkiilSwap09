@@ -210,28 +210,28 @@ export function ChatWidget() {
           {/* Pixelated chat bubble icon with conditional fill */}
           <div className="relative w-full h-full flex items-center justify-center z-10">
             <svg 
-              width="40" 
-              height="40" 
-              viewBox="0 0 40 40" 
+              width="48" 
+              height="48" 
+              viewBox="0 0 48 48" 
               className="relative z-10"
               style={{ imageRendering: 'pixelated' }}
             >
               {/* Outer bubble - always white stroke */}
-              <rect x="6" y="6" width="28" height="20" fill="none" stroke="white" strokeWidth="3"/>
+              <rect x="8" y="8" width="32" height="24" fill="none" stroke="white" strokeWidth="3"/>
               
               {/* Inner fill - red if unread, transparent if not */}
               <rect 
-                x="9" 
-                y="9" 
-                width="22" 
-                height="14" 
+                x="11" 
+                y="11" 
+                width="26" 
+                height="18" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 className="transition-colors duration-300"
               />
               
               {/* Speech bubble tail */}
               <path 
-                d="M 16 26 L 16 32 L 22 26 Z" 
+                d="M 20 32 L 20 40 L 28 32 Z" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 stroke="white" 
                 strokeWidth="3"
@@ -240,9 +240,9 @@ export function ChatWidget() {
               />
               
               {/* Pixel dots inside bubble (always white) */}
-              <rect x="13" y="14" width="3" height="3" fill="white"/>
-              <rect x="19" y="14" width="3" height="3" fill="white"/>
-              <rect x="25" y="14" width="3" height="3" fill="white"/>
+              <rect x="16" y="17" width="4" height="4" fill="white"/>
+              <rect x="23" y="17" width="4" height="4" fill="white"/>
+              <rect x="30" y="17" width="4" height="4" fill="white"/>
             </svg>
           </div>
           
