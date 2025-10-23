@@ -209,9 +209,9 @@ export function ChatWidget() {
         >
           {/* Pixelated chat bubble icon with conditional fill */}
           <motion.div 
-            className="relative w-full h-full flex items-center justify-center z-10 scale-125"
+            className="relative w-full h-full flex items-center justify-center z-10 scale-150"
             animate={{
-              scale: [1.25, 1.3, 1.25],
+              scale: [1.5, 1.55, 1.5],
             }}
             transition={{
               duration: 2,
@@ -220,31 +220,31 @@ export function ChatWidget() {
             }}
           >
             <svg 
-              width="100" 
-              height="100" 
-              viewBox="0 0 100 100" 
+              width="120" 
+              height="120" 
+              viewBox="0 0 120 120" 
               className="relative z-10"
               style={{ imageRendering: 'pixelated' }}
             >
               {/* Outer bubble - always white stroke */}
-              <rect x="20" y="20" width="60" height="45" fill="none" stroke="white" strokeWidth="6"/>
+              <rect x="24" y="24" width="72" height="54" fill="none" stroke="white" strokeWidth="7"/>
               
               {/* Inner fill - red if unread, transparent if not */}
               <rect 
-                x="26" 
-                y="26" 
-                width="48" 
-                height="33" 
+                x="31" 
+                y="31" 
+                width="58" 
+                height="40" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 className="transition-colors duration-300"
               />
               
               {/* Speech bubble tail */}
               <path 
-                d="M 42 65 L 42 80 L 58 65 Z" 
+                d="M 50 78 L 50 96 L 70 78 Z" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 stroke="white" 
-                strokeWidth="6"
+                strokeWidth="7"
                 strokeLinejoin="miter"
                 className="transition-colors duration-300"
               />
@@ -261,9 +261,9 @@ export function ChatWidget() {
                   times: [0, 0.5, 1]
                 }}
               >
-                <rect x="33" y="37" width="7" height="7" fill="white"/>
-                <rect x="47" y="37" width="7" height="7" fill="white"/>
-                <rect x="61" y="37" width="7" height="7" fill="white"/>
+                <rect x="40" y="44" width="8" height="8" fill="white"/>
+                <rect x="56" y="44" width="8" height="8" fill="white"/>
+                <rect x="72" y="44" width="8" height="8" fill="white"/>
               </motion.g>
             </svg>
           </motion.div>
