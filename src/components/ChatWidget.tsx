@@ -208,7 +208,17 @@ export function ChatWidget() {
           }}
         >
           {/* Pixelated chat bubble icon with conditional fill */}
-          <div className="relative w-full h-full flex items-center justify-center z-10">
+          <motion.div 
+            className="relative w-full h-full flex items-center justify-center z-10"
+            animate={{
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
             <svg 
               width="48" 
               height="48" 
@@ -239,12 +249,24 @@ export function ChatWidget() {
                 className="transition-colors duration-300"
               />
               
-              {/* Pixel dots inside bubble (always white) */}
-              <rect x="16" y="17" width="4" height="4" fill="white"/>
-              <rect x="23" y="17" width="4" height="4" fill="white"/>
-              <rect x="30" y="17" width="4" height="4" fill="white"/>
+              {/* Pixel dots inside bubble (always white) - animated */}
+              <motion.g
+                animate={{
+                  opacity: [1, 0.3, 1],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  times: [0, 0.5, 1]
+                }}
+              >
+                <rect x="16" y="17" width="4" height="4" fill="white"/>
+                <rect x="23" y="17" width="4" height="4" fill="white"/>
+                <rect x="30" y="17" width="4" height="4" fill="white"/>
+              </motion.g>
             </svg>
-          </div>
+          </motion.div>
           
           {/* Animated racing lines inside button */}
           <motion.div
