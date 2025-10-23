@@ -216,11 +216,26 @@ export default function Exchanges() {
                       <ProgressBar current={completedSessions} total={totalSessions} />
                       
                       <div className="flex gap-3">
-                        <Button className="flex-1 bg-primary text-primary-foreground rounded-sm hover:bg-primary/90 pixel-corners">
+                        <Button 
+                          className="flex-1 bg-primary text-primary-foreground rounded-sm hover:bg-primary/90 pixel-corners"
+                          onClick={() => {
+                            toast({
+                              title: "📅 Schedule Session",
+                              description: "Session scheduling feature coming soon! For now, coordinate via chat.",
+                            });
+                          }}
+                        >
                           <Calendar className="w-4 h-4 mr-2" />
                           Schedule Session
                         </Button>
-                        <Button variant="outline" className="flex-1 border-2 border-primary/30 text-primary rounded-sm hover:bg-primary/10 pixel-corners">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1 border-2 border-primary/30 text-primary rounded-sm hover:bg-primary/10 pixel-corners"
+                          onClick={() => {
+                            const partnerId = userId === exchange.requester_id ? exchange.provider_id : exchange.requester_id;
+                            navigate(`/chat?userId=${partnerId}`);
+                          }}
+                        >
                           <MessageSquare className="w-4 h-4 mr-2" />
                           Message
                         </Button>
