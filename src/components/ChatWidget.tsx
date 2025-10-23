@@ -209,9 +209,9 @@ export function ChatWidget() {
         >
           {/* Pixelated chat bubble icon with conditional fill */}
           <motion.div 
-            className="relative w-full h-full flex items-center justify-center z-10 scale-150"
+            className="relative w-full h-full flex items-center justify-center z-10 scale-[2]"
             animate={{
-              scale: [1.5, 1.55, 1.5],
+              scale: [2, 2.05, 2],
             }}
             transition={{
               duration: 2,
