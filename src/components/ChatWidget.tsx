@@ -210,39 +210,39 @@ export function ChatWidget() {
           {/* Pixelated chat bubble icon with conditional fill */}
           <div className="relative w-full h-full flex items-center justify-center z-10">
             <svg 
-              width="32" 
-              height="32" 
-              viewBox="0 0 32 32" 
+              width="40" 
+              height="40" 
+              viewBox="0 0 40 40" 
               className="relative z-10"
               style={{ imageRendering: 'pixelated' }}
             >
               {/* Outer bubble - always white stroke */}
-              <rect x="4" y="4" width="24" height="16" fill="none" stroke="white" strokeWidth="2"/>
+              <rect x="6" y="6" width="28" height="20" fill="none" stroke="white" strokeWidth="3"/>
               
               {/* Inner fill - red if unread, transparent if not */}
               <rect 
-                x="6" 
-                y="6" 
-                width="20" 
-                height="12" 
+                x="9" 
+                y="9" 
+                width="22" 
+                height="14" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 className="transition-colors duration-300"
               />
               
               {/* Speech bubble tail */}
               <path 
-                d="M 12 20 L 12 24 L 16 20 Z" 
+                d="M 16 26 L 16 32 L 22 26 Z" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 stroke="white" 
-                strokeWidth="2"
+                strokeWidth="3"
                 strokeLinejoin="miter"
                 className="transition-colors duration-300"
               />
               
               {/* Pixel dots inside bubble (always white) */}
-              <rect x="10" y="10" width="2" height="2" fill="white"/>
-              <rect x="15" y="10" width="2" height="2" fill="white"/>
-              <rect x="20" y="10" width="2" height="2" fill="white"/>
+              <rect x="13" y="14" width="3" height="3" fill="white"/>
+              <rect x="19" y="14" width="3" height="3" fill="white"/>
+              <rect x="25" y="14" width="3" height="3" fill="white"/>
             </svg>
           </div>
           
@@ -304,7 +304,17 @@ export function ChatWidget() {
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="fixed bottom-6 right-6 z-50"
     >
-      <Card className="w-96 shadow-2xl pixel-corners border-4 bg-gradient-to-br from-background to-secondary/20 backdrop-blur-xl overflow-hidden">
+      <Card 
+        className="w-96 shadow-2xl border-4 border-cyan-400 bg-gradient-to-br from-background to-secondary/20 backdrop-blur-xl overflow-hidden relative"
+        style={{
+          clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+          boxShadow: '0 0 0 2px rgba(34, 211, 238, 0.5), 0 0 20px rgba(6, 182, 212, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4)'
+        }}
+      >
+        {/* Pixelated corner decorations */}
+        <div className="absolute top-0 right-0 w-3 h-3 bg-cyan-400" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }} />
+        <div className="absolute bottom-0 left-0 w-3 h-3 bg-cyan-400" style={{ clipPath: 'polygon(0 100%, 100% 100%, 0 0)' }} />
+        
         {/* Racing lines animation at the top */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent overflow-hidden">
           <motion.div
