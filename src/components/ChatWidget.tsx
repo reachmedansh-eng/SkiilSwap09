@@ -220,31 +220,31 @@ export function ChatWidget() {
             }}
           >
             <svg 
-              width="70" 
-              height="70" 
-              viewBox="0 0 70 70" 
+              width="90" 
+              height="90" 
+              viewBox="0 0 90 90" 
               className="relative z-10"
               style={{ imageRendering: 'pixelated' }}
             >
               {/* Outer bubble - always white stroke */}
-              <rect x="15" y="15" width="40" height="30" fill="none" stroke="white" strokeWidth="4"/>
+              <rect x="18" y="18" width="54" height="40" fill="none" stroke="white" strokeWidth="5"/>
               
               {/* Inner fill - red if unread, transparent if not */}
               <rect 
-                x="19" 
-                y="19" 
-                width="32" 
-                height="22" 
+                x="23" 
+                y="23" 
+                width="44" 
+                height="30" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 className="transition-colors duration-300"
               />
               
               {/* Speech bubble tail */}
               <path 
-                d="M 30 45 L 30 55 L 40 45 Z" 
+                d="M 38 58 L 38 72 L 52 58 Z" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 stroke="white" 
-                strokeWidth="4"
+                strokeWidth="5"
                 strokeLinejoin="miter"
                 className="transition-colors duration-300"
               />
@@ -261,9 +261,9 @@ export function ChatWidget() {
                   times: [0, 0.5, 1]
                 }}
               >
-                <rect x="24" y="26" width="5" height="5" fill="white"/>
-                <rect x="33" y="26" width="5" height="5" fill="white"/>
-                <rect x="42" y="26" width="5" height="5" fill="white"/>
+                <rect x="30" y="33" width="6" height="6" fill="white"/>
+                <rect x="42" y="33" width="6" height="6" fill="white"/>
+                <rect x="54" y="33" width="6" height="6" fill="white"/>
               </motion.g>
             </svg>
           </motion.div>
