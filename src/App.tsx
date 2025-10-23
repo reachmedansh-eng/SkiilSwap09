@@ -19,6 +19,7 @@ import Settings from "./pages/Settings";
 import MyListings from "./pages/MyListings";
 import ProposeSwap from "./pages/ProposeSwap";
 import Inbox from "./pages/Inbox";
+import Chat from "./pages/Chat";
 import { CreditsBadge } from "@/components/CreditsBadge";
 import { ChatWidget } from "@/components/ChatWidget";
 import { useEffect } from "react";
@@ -61,6 +62,7 @@ const App = () => {
             <Route path="/my-listings" element={<ProtectedRoute><MyListings /></ProtectedRoute>} />
             <Route path="/propose-swap" element={<ProtectedRoute><ProposeSwap /></ProtectedRoute>} />
             <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/exchanges" element={<ProtectedRoute><Exchanges /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
