@@ -202,9 +202,9 @@ export function ChatWidget() {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="relative w-16 h-16 shadow-2xl pixel-corners bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 overflow-hidden p-0"
+          className="relative w-20 h-20 shadow-2xl pixel-corners bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 overflow-hidden p-0"
           style={{
-            clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'
+            clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
           }}
         >
           {/* Pixelated chat bubble icon with conditional fill */}
@@ -220,28 +220,28 @@ export function ChatWidget() {
             }}
           >
             <svg 
-              width="56" 
-              height="56" 
-              viewBox="0 0 56 56" 
+              width="70" 
+              height="70" 
+              viewBox="0 0 70 70" 
               className="relative z-10"
               style={{ imageRendering: 'pixelated' }}
             >
               {/* Outer bubble - always white stroke */}
-              <rect x="10" y="10" width="36" height="28" fill="none" stroke="white" strokeWidth="4"/>
+              <rect x="15" y="15" width="40" height="30" fill="none" stroke="white" strokeWidth="4"/>
               
               {/* Inner fill - red if unread, transparent if not */}
               <rect 
-                x="14" 
-                y="14" 
-                width="28" 
-                height="20" 
+                x="19" 
+                y="19" 
+                width="32" 
+                height="22" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 className="transition-colors duration-300"
               />
               
               {/* Speech bubble tail */}
               <path 
-                d="M 24 38 L 24 48 L 32 38 Z" 
+                d="M 30 45 L 30 55 L 40 45 Z" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 stroke="white" 
                 strokeWidth="4"
@@ -261,9 +261,9 @@ export function ChatWidget() {
                   times: [0, 0.5, 1]
                 }}
               >
-                <rect x="18" y="20" width="5" height="5" fill="white"/>
-                <rect x="26" y="20" width="5" height="5" fill="white"/>
-                <rect x="34" y="20" width="5" height="5" fill="white"/>
+                <rect x="24" y="26" width="5" height="5" fill="white"/>
+                <rect x="33" y="26" width="5" height="5" fill="white"/>
+                <rect x="42" y="26" width="5" height="5" fill="white"/>
               </motion.g>
             </svg>
           </motion.div>
@@ -292,7 +292,7 @@ export function ChatWidget() {
           <motion.div
             className="absolute inset-0"
             style={{
-              clipPath: 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))'
+              clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
             }}
             animate={{
               boxShadow: unreadCount > 0 
