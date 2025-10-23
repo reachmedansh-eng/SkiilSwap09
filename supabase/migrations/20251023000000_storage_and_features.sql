@@ -3,7 +3,12 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
 
--- Storage policies for avatars
+-- Storage policies for avatars (drop existing ones first to avoid conflicts)
+drop policy if exists "Avatar images are publicly accessible" on storage.objects;
+drop policy if exists "Anyone can upload an avatar" on storage.objects;
+drop policy if exists "Users can update their own avatar" on storage.objects;
+drop policy if exists "Users can delete their own avatar" on storage.objects;
+
 create policy "Avatar images are publicly accessible"
   on storage.objects for select
   using ( bucket_id = 'avatars' );
@@ -25,16 +30,27 @@ create table if not exists public.messages (
   id uuid default gen_random_uuid() primary key,
   sender_id uuid references public.profiles(id) on delete cascade not null,
   receiver_id uuid references public.profiles(id) on delete cascade not null,
-  exchange_id uuid references public.exchanges(id) on delete cascade,
   content text not null,
   read boolean default false,
   created_at timestamp with time zone default now() not null
 );
 
+-- Add exchange_id column if it doesn't exist
+do $$
+begin
+  if not exists (select 1 from information_schema.columns where table_name = 'messages' and column_name = 'exchange_id') then
+    alter table public.messages add column exchange_id uuid;
+  end if;
+end $$;
+
 -- Enable RLS on messages
 alter table public.messages enable row level security;
 
--- Messages policies
+-- Messages policies (drop existing ones first)
+drop policy if exists "Users can view messages they sent or received" on public.messages;
+drop policy if exists "Users can send messages" on public.messages;
+drop policy if exists "Users can update messages they received (mark as read)" on public.messages;
+
 create policy "Users can view messages they sent or received"
   on public.messages for select
   using (auth.uid() = sender_id OR auth.uid() = receiver_id);
@@ -61,7 +77,10 @@ create table if not exists public.badges (
 -- Enable RLS on badges
 alter table public.badges enable row level security;
 
--- Badges policies
+-- Badges policies (drop existing ones first)
+drop policy if exists "Badges are viewable by everyone" on public.badges;
+drop policy if exists "System can insert badges" on public.badges;
+
 create policy "Badges are viewable by everyone"
   on public.badges for select
   using (true);
@@ -73,7 +92,6 @@ create policy "System can insert badges"
 -- Add index for faster message queries
 create index if not exists messages_sender_id_idx on public.messages(sender_id);
 create index if not exists messages_receiver_id_idx on public.messages(receiver_id);
-create index if not exists messages_exchange_id_idx on public.messages(exchange_id);
 create index if not exists messages_created_at_idx on public.messages(created_at desc);
 
 -- Add index for badges
