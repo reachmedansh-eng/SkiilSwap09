@@ -202,16 +202,16 @@ export function ChatWidget() {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="relative w-20 h-20 shadow-2xl pixel-corners bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 overflow-hidden p-0"
+          className="relative w-20 h-20 shadow-2xl pixel-corners bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 overflow-visible p-0"
           style={{
             clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))'
           }}
         >
           {/* Pixelated chat bubble icon with conditional fill */}
           <motion.div 
-            className="relative w-full h-full flex items-center justify-center z-10"
+            className="relative w-full h-full flex items-center justify-center z-10 scale-125"
             animate={{
-              scale: [1, 1.05, 1],
+              scale: [1.25, 1.3, 1.25],
             }}
             transition={{
               duration: 2,
@@ -220,31 +220,31 @@ export function ChatWidget() {
             }}
           >
             <svg 
-              width="90" 
-              height="90" 
-              viewBox="0 0 90 90" 
+              width="100" 
+              height="100" 
+              viewBox="0 0 100 100" 
               className="relative z-10"
               style={{ imageRendering: 'pixelated' }}
             >
               {/* Outer bubble - always white stroke */}
-              <rect x="18" y="18" width="54" height="40" fill="none" stroke="white" strokeWidth="5"/>
+              <rect x="20" y="20" width="60" height="45" fill="none" stroke="white" strokeWidth="6"/>
               
               {/* Inner fill - red if unread, transparent if not */}
               <rect 
-                x="23" 
-                y="23" 
-                width="44" 
-                height="30" 
+                x="26" 
+                y="26" 
+                width="48" 
+                height="33" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 className="transition-colors duration-300"
               />
               
               {/* Speech bubble tail */}
               <path 
-                d="M 38 58 L 38 72 L 52 58 Z" 
+                d="M 42 65 L 42 80 L 58 65 Z" 
                 fill={unreadCount > 0 ? "#ef4444" : "none"}
                 stroke="white" 
-                strokeWidth="5"
+                strokeWidth="6"
                 strokeLinejoin="miter"
                 className="transition-colors duration-300"
               />
@@ -261,9 +261,9 @@ export function ChatWidget() {
                   times: [0, 0.5, 1]
                 }}
               >
-                <rect x="30" y="33" width="6" height="6" fill="white"/>
-                <rect x="42" y="33" width="6" height="6" fill="white"/>
-                <rect x="54" y="33" width="6" height="6" fill="white"/>
+                <rect x="33" y="37" width="7" height="7" fill="white"/>
+                <rect x="47" y="37" width="7" height="7" fill="white"/>
+                <rect x="61" y="37" width="7" height="7" fill="white"/>
               </motion.g>
             </svg>
           </motion.div>
