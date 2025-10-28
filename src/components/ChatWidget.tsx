@@ -38,11 +38,18 @@ export function ChatWidget() {
 
   // Helper functions defined first
   const fetchUsers = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("id, username")
       .neq("id", userId)
       .limit(10);
+    
+    if (error) {
+      console.error("Error fetching users:", error);
+      return;
+    }
+    
+    console.log("Fetched users:", data);
     if (data) setUsers(data);
   };
 
@@ -75,7 +82,7 @@ export function ChatWidget() {
   const fetchMessages = async (otherUserId: string) => {
     if (!currentUserId) return;
     
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("messages")
       .select(`
         *,
@@ -84,7 +91,13 @@ export function ChatWidget() {
       .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`)
       .order("created_at", { ascending: true });
 
+    if (error) {
+      console.error("Error fetching messages:", error);
+      return;
+    }
+
     if (data) {
+      console.log("Fetched messages:", data);
       setMessages(data);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
@@ -93,16 +106,26 @@ export function ChatWidget() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedUser || !currentUserId) return;
 
-    const { error } = await supabase.from("messages").insert({
+    console.log("Sending message:", { 
+      sender_id: currentUserId, 
+      receiver_id: selectedUser.id, 
+      content: newMessage.trim() 
+    });
+
+    const { data, error } = await supabase.from("messages").insert({
       sender_id: currentUserId,
       receiver_id: selectedUser.id,
       content: newMessage.trim(),
-    });
+    }).select();
 
-    if (!error) {
-      setNewMessage("");
-      fetchMessages(selectedUser.id);
+    if (error) {
+      console.error("Error sending message:", error);
+      return;
     }
+
+    console.log("Message sent:", data);
+    setNewMessage("");
+    fetchMessages(selectedUser.id);
   };
 
   // Effects
