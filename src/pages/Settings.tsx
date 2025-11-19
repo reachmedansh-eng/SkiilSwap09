@@ -218,38 +218,52 @@ export default function Settings() {
         <Card className="glass border-destructive/30">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            <CardDescription>Delete your account and profile data</CardDescription>
+            <CardDescription>Delete your account and all associated data permanently</CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="destructive" className="pixel-corners" onClick={() => setConfirmDelete(true)}>
               Delete my account
             </Button>
-            <p className="text-sm text-muted-foreground mt-2">This removes your profile data. For full account deletion, you must confirm via email.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This will permanently delete your profile, messages, and all data. This action cannot be undone.
+            </p>
           </CardContent>
         </Card>
 
         <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete account?</AlertDialogTitle>
+              <AlertDialogTitle>Delete account permanently?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will delete your profile data and sign you out. We will also send an email to confirm deletion of your authentication account.
+                This action cannot be undone. This will permanently delete your account, profile, messages, and all associated data. You will be signed out immediately.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={async () => {
                 if (!userId) return;
-                const { error } = await supabase.from('profiles').delete().eq('id', userId);
-                if (error) {
-                  toast.error('Failed to delete profile');
-                  return;
+                
+                try {
+                  // Call the deletion function to delete auth user
+                  const { data, error: funcError } = await supabase.rpc('delete_user_account');
+                  
+                  if (funcError) {
+                    console.error('Deletion error:', funcError);
+                    toast.error('Failed to delete account: ' + funcError.message);
+                    return;
+                  }
+
+                  // Sign out the user
+                  await supabase.auth.signOut();
+                  
+                  toast.success('Account permanently deleted! You cannot sign in again.');
+                  setConfirmDelete(false);
+                  navigate('/');
+                } catch (err) {
+                  console.error('Delete error:', err);
+                  toast.error('An error occurred during deletion.');
                 }
-                await supabase.auth.signOut();
-                toast.success('Profile deleted. Please check your email to finalize account deletion.');
-                setConfirmDelete(false);
-                navigate('/');
-              }}>Delete</AlertDialogAction>
+              }}>Delete Permanently</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

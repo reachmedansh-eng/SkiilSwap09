@@ -1,3 +1,4 @@
+import { RetroGameRoomBackground } from "@/components/RetroGameRoomBackground";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -395,7 +396,9 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mint-breeze via-white to-teal-pulse/10 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-12">
+      {/* Static retro game room background behind signup flow */}
+      <RetroGameRoomBackground />
       <div className="w-full max-w-2xl">
         {currentStep < 5 && (
           <div className="mb-8">

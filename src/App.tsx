@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Footer } from "@/components/Footer";
 import Dashboard from "./pages/Dashboard";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Auth from "./pages/Auth";
@@ -20,6 +19,7 @@ import MyListings from "./pages/MyListings";
 import ProposeSwap from "./pages/ProposeSwap";
 import Inbox from "./pages/Inbox";
 import Chat from "./pages/Chat";
+import ScheduleSession from "./pages/ScheduleSession";
 import { CreditsBadge } from "@/components/CreditsBadge";
 import { ChatWidget } from "@/components/ChatWidget";
 import { useEffect } from "react";
@@ -64,13 +64,13 @@ const App = () => {
             <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/exchanges" element={<ProtectedRoute><Exchanges /></ProtectedRoute>} />
+            <Route path="/schedule-session/:exchangeId" element={<ProtectedRoute><ScheduleSession /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <CreditsBadge />
           <ChatWidget />
-          <Footer />
         </div>
       </BrowserRouter>
     </TooltipProvider>

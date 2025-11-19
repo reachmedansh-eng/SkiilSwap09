@@ -8,8 +8,8 @@ interface SkillChipProps {
 
 export const SkillChip = ({ skill, onRemove, variant = "offer" }: SkillChipProps) => {
   const colorClass = variant === "offer" 
-    ? "bg-teal-pulse/10 text-teal-pulse border-teal-pulse/20" 
-    : "bg-golden-spark/20 text-deep-indigo border-golden-spark/40";
+    ? "bg-teal/10 text-teal border-teal/20" 
+    : "bg-mustard/30 text-indigo border-mustard/50";
 
   return (
     <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${colorClass} transition-all hover:scale-105`}>

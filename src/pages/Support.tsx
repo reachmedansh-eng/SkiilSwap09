@@ -60,44 +60,44 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mint-breeze/30 via-white to-teal-pulse/5 relative">
+  <div className="min-h-screen bg-gradient-to-br from-mint/40 via-white to-teal/5 relative">
       <RetroBackground />
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-deep-indigo mb-2">Support Center</h1>
-          <p className="text-soft-horizon text-lg">Find answers and get help</p>
+          <h1 className="text-4xl font-bold text-indigo mb-2">Support Center</h1>
+          <p className="text-soft-blue text-lg">Find answers and get help</p>
         </div>
 
         {/* Quick Links */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <Card className="bg-white/80 backdrop-blur-lg border-soft-horizon/20 hover:border-teal-pulse/40 transition-all cursor-pointer">
+          <Card className="bg-white/80 backdrop-blur-lg border-soft-blue/20 hover:border-teal/40 transition-all cursor-pointer">
             <CardHeader>
-              <div className="w-12 h-12 bg-teal-pulse/10 rounded-xl flex items-center justify-center mb-3">
-                <Book className="w-6 h-6 text-teal-pulse" />
+              <div className="w-12 h-12 bg-teal/10 rounded-xl flex items-center justify-center mb-3">
+                <Book className="w-6 h-6 text-teal" />
               </div>
-              <CardTitle className="text-deep-indigo">Getting Started</CardTitle>
+              <CardTitle className="text-indigo">Getting Started</CardTitle>
               <CardDescription>Learn the basics of SkillSwap</CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-lg border-soft-horizon/20 hover:border-teal-pulse/40 transition-all cursor-pointer">
+          <Card className="bg-white/80 backdrop-blur-lg border-soft-blue/20 hover:border-teal/40 transition-all cursor-pointer">
             <CardHeader>
-              <div className="w-12 h-12 bg-golden-spark/20 rounded-xl flex items-center justify-center mb-3">
-                <MessageCircle className="w-6 h-6 text-deep-indigo" />
+              <div className="w-12 h-12 bg-mustard/30 rounded-xl flex items-center justify-center mb-3">
+                <MessageCircle className="w-6 h-6 text-indigo" />
               </div>
-              <CardTitle className="text-deep-indigo">Contact Us</CardTitle>
+              <CardTitle className="text-indigo">Contact Us</CardTitle>
               <CardDescription>Get personalized support</CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-lg border-soft-horizon/20 hover:border-teal-pulse/40 transition-all cursor-pointer">
+          <Card className="bg-white/80 backdrop-blur-lg border-soft-blue/20 hover:border-teal/40 transition-all cursor-pointer">
             <CardHeader>
-              <div className="w-12 h-12 bg-mint-breeze rounded-xl flex items-center justify-center mb-3">
-                <Users className="w-6 h-6 text-teal-pulse" />
+              <div className="w-12 h-12 bg-mint rounded-xl flex items-center justify-center mb-3">
+                <Users className="w-6 h-6 text-teal" />
               </div>
-              <CardTitle className="text-deep-indigo">Community Forum</CardTitle>
+              <CardTitle className="text-indigo">Community Forum</CardTitle>
               <CardDescription>Connect with other swappers</CardDescription>
             </CardHeader>
           </Card>
@@ -106,27 +106,27 @@ export default function Support() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* FAQ Section */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 backdrop-blur-lg border-soft-horizon/20 shadow-lg">
+            <Card className="bg-white/80 backdrop-blur-lg border-soft-blue/20 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-2xl text-deep-indigo">Frequently Asked Questions</CardTitle>
+                <CardTitle className="text-2xl text-indigo">Frequently Asked Questions</CardTitle>
                 <div className="relative mt-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-soft-horizon" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-soft-blue" />
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search FAQs..."
-                    className="pl-10 rounded-xl border-soft-horizon/30 focus:border-teal-pulse"
+                    className="pl-10 rounded-xl border-soft-blue/30 focus:border-teal"
                   />
                 </div>
               </CardHeader>
               <CardContent>
                 <Accordion type="single" collapsible className="space-y-4">
                   {filteredFaqs.map((faq, index) => (
-                    <AccordionItem key={index} value={`item-${index}`} className="border border-soft-horizon/20 rounded-lg px-4">
-                      <AccordionTrigger className="text-deep-indigo font-semibold hover:text-teal-pulse">
+                    <AccordionItem key={index} value={`item-${index}`} className="border border-soft-blue/20 rounded-lg px-4">
+                      <AccordionTrigger className="text-indigo font-semibold hover:text-teal">
                         {faq.question}
                       </AccordionTrigger>
-                      <AccordionContent className="text-soft-horizon">
+                      <AccordionContent className="text-soft-blue">
                         {faq.answer}
                       </AccordionContent>
                     </AccordionItem>
@@ -134,7 +134,7 @@ export default function Support() {
                 </Accordion>
 
                 {filteredFaqs.length === 0 && (
-                  <p className="text-center text-soft-horizon py-8">No FAQs match your search</p>
+                  <p className="text-center text-soft-blue py-8">No FAQs match your search</p>
                 )}
               </CardContent>
             </Card>
@@ -142,49 +142,49 @@ export default function Support() {
 
           {/* Contact Form */}
           <div>
-            <Card className="bg-white/80 backdrop-blur-lg border-soft-horizon/20 shadow-lg sticky top-8">
+            <Card className="bg-white/80 backdrop-blur-lg border-soft-blue/20 shadow-lg sticky top-8">
               <CardHeader>
-                <CardTitle className="text-xl text-deep-indigo">Contact Support</CardTitle>
+                <CardTitle className="text-xl text-indigo">Contact Support</CardTitle>
                 <CardDescription>Can't find what you're looking for?</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-deep-indigo mb-2">Name</label>
+                    <label className="block text-sm font-medium text-indigo mb-2">Name</label>
                     <Input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Your name"
-                      className="rounded-xl border-soft-horizon/30 focus:border-teal-pulse"
+                      className="rounded-xl border-soft-blue/30 focus:border-teal"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-deep-indigo mb-2">Email</label>
+                    <label className="block text-sm font-medium text-indigo mb-2">Email</label>
                     <Input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="your@email.com"
-                      className="rounded-xl border-soft-horizon/30 focus:border-teal-pulse"
+                      className="rounded-xl border-soft-blue/30 focus:border-teal"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-deep-indigo mb-2">Message</label>
+                    <label className="block text-sm font-medium text-indigo mb-2">Message</label>
                     <Textarea
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="How can we help?"
                       rows={5}
-                      className="rounded-xl border-soft-horizon/30 focus:border-teal-pulse resize-none"
+                      className="rounded-xl border-soft-blue/30 focus:border-teal resize-none"
                       required
                     />
                   </div>
 
-                  <Button type="submit" className="w-full bg-teal-pulse text-white rounded-xl hover:bg-teal-pulse/90">
+                  <Button type="submit" className="w-full bg-teal text-white rounded-xl hover:bg-teal/90">
                     Send Message
                   </Button>
                 </form>

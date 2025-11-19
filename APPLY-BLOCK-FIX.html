@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Apply Block Policy - Supabase</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            border: 2px solid #3b82f6;
+        }
+        h1 {
+            color: #3b82f6;
+            margin-top: 0;
+        }
+        .warning {
+            background: #ef4444;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .step {
+            background: #334155;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .sql-box {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid #475569;
+        }
+        .button {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .checkmark {
+            color: #10b981;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 CRITICAL: Apply Block Policy to Database</h1>
+        
+        <div class="warning">
+            ⚠️ BLOCKED USERS CAN STILL SEND MESSAGES UNTIL YOU RUN THIS SQL!
+        </div>
+
+        <div class="step">
+            <h2>Step 1: Open Supabase SQL Editor</h2>
+            <p>Click this button to open the SQL editor:</p>
+            <a href="https://supabase.com/dashboard/project/zyzvxwnmzbwxgrtawqyy/sql/new" 
+               target="_blank" 
+               class="button">
+               📝 OPEN SQL EDITOR
+            </a>
+        </div>
+
+        <div class="step">
+            <h2>Step 2: Copy This SQL</h2>
+            <div class="sql-box">DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
+
+CREATE POLICY "Users can send messages"
+ON public.messages FOR INSERT
+WITH CHECK (
+  auth.uid() = sender_id
+  AND NOT EXISTS (
+    SELECT 1 FROM public.blocked_users b
+    WHERE (
+      (b.blocker_id = auth.uid() AND b.blocked_id = receiver_id) OR
+      (b.blocked_id = auth.uid() AND b.blocker_id = receiver_id)
+    )
+  )
+);
+
+DROP POLICY IF EXISTS "Users can view messages they sent or received" ON public.messages;
+
+CREATE POLICY "Users can view messages they sent or received"
+ON public.messages FOR SELECT
+USING (auth.uid() = sender_id OR auth.uid() = receiver_id);</div>
+            <button onclick="copySQL()" style="background: #10b981; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                📋 COPY SQL TO CLIPBOARD
+            </button>
+        </div>
+
+        <div class="step">
+            <h2>Step 3: Paste and Run</h2>
+            <p>1. Paste the SQL into the editor</p>
+            <p>2. Click the green <strong>"RUN"</strong> button</p>
+            <p>3. You should see "Success. No rows returned"</p>
+        </div>
+
+        <div class="step" style="border-left-color: #10b981;">
+            <h2><span class="checkmark">✓</span> After Running</h2>
+            <p>✅ Blocked users CANNOT send messages (database blocks it)</p>
+            <p>✅ Blocker CANNOT send messages to blocked user</p>
+            <p>✅ Old messages stay visible</p>
+            <p>✅ UI shows "Blocked - cannot send messages"</p>
+            <p>✅ Works in both Chat page and ChatWidget</p>
+        </div>
+    </div>
+
+    <script>
+        const sql = `DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
+
+CREATE POLICY "Users can send messages"
+ON public.messages FOR INSERT
+WITH CHECK (
+  auth.uid() = sender_id
+  AND NOT EXISTS (
+    SELECT 1 FROM public.blocked_users b
+    WHERE (
+      (b.blocker_id = auth.uid() AND b.blocked_id = receiver_id) OR
+      (b.blocked_id = auth.uid() AND b.blocker_id = receiver_id)
+    )
+  )
+);
+
+DROP POLICY IF EXISTS "Users can view messages they sent or received" ON public.messages;
+
+CREATE POLICY "Users can view messages they sent or received"
+ON public.messages FOR SELECT
+USING (auth.uid() = sender_id OR auth.uid() = receiver_id);`;
+
+        function copySQL() {
+            navigator.clipboard.writeText(sql).then(() => {
+                alert('✅ SQL copied to clipboard! Now paste it in Supabase and click RUN.');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const [stage, setStage] = useState<'boot' | 'static' | 'wave' | 'welcome' | 'fade'>('boot');
+  const [stage, setStage] = useState<'boot' | 'static' | 'wave' | 'welcome' | 'ready'>('boot');
   const [showText, setShowText] = useState(false);
   const [titleText, setTitleText] = useState('');
   const [subtitleText, setSubtitleText] = useState('');
   const [taglineText, setTaglineText] = useState('');
+  const [showProceed, setShowProceed] = useState(false);
 
   useEffect(() => {
     // Boot sequence - slower for suspense
@@ -18,17 +19,25 @@ export default function Onboarding() {
       setStage('welcome');
       setShowText(true);
     }, 6000);
-    const fadeTimer = setTimeout(() => setStage('fade'), 13000);
-    const completeTimer = setTimeout(() => navigate('/auth'), 14500);
 
     return () => {
       clearTimeout(bootTimer);
       clearTimeout(staticTimer);
       clearTimeout(waveTimer);
-      clearTimeout(fadeTimer);
-      clearTimeout(completeTimer);
     };
   }, [navigate]);
+
+  // Listen for Enter key
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && showProceed && stage === 'ready') {
+        navigate('/auth');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [navigate, showProceed, stage]);
 
   // Typewriter effect for text
   useEffect(() => {
@@ -65,6 +74,11 @@ export default function Onboarding() {
                 taglineIndex++;
               } else {
                 clearInterval(taglineInterval);
+                // Show "Press Enter" message after typing is complete
+                setTimeout(() => {
+                  setStage('ready');
+                  setShowProceed(true);
+                }, 1000);
               }
             }, 50);
           }
@@ -97,10 +111,6 @@ export default function Onboarding() {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ duration: 2, ease: [0.34, 1.56, 0.64, 1] }}
           className="mx-auto mb-12"
-          style={{
-            filter: stage === 'fade' ? 'brightness(0)' : 'brightness(1)',
-            transition: 'filter 1.5s ease-out'
-          }}
         >
         {/* TV Frame */}
         <div className="relative w-[900px] h-[600px] bg-gradient-to-b from-zinc-800 via-zinc-700 to-zinc-900 rounded-[2.5rem] p-12"
@@ -261,7 +271,7 @@ export default function Onboarding() {
 
               {/* Stage: Wave reveal */}
               <AnimatePresence>
-                {(stage === 'wave' || stage === 'welcome' || stage === 'fade') && (
+                {(stage === 'wave' || stage === 'welcome' || stage === 'ready') && (
                   <div className="absolute inset-0 bg-gradient-to-br from-teal-900 via-blue-900 to-indigo-900">
                     {/* Animated wave gradient - slower */}
                     <motion.div
@@ -350,15 +360,15 @@ export default function Onboarding() {
                         )}
                       </p>
 
-                      {/* Initializing text - only show after all text is typed */}
-                      {taglineText.length >= 30 && (
+                      {/* Press Enter text - only show after all text is typed */}
+                      {showProceed && stage === 'ready' && (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: [0, 1, 0, 1] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
-                          className="text-cyan-400 text-sm font-retro"
+                          className="text-cyan-400 text-lg font-retro mt-4"
                         >
-                          ⚡ INITIALIZING ⚡
+                          ⏎ PRESS ENTER TO PROCEED ⏎
                         </motion.div>
                       )}
                     </div>

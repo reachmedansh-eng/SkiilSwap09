@@ -220,6 +220,19 @@ All colors MUST be HSL.
     mix-blend-mode: multiply; /* helps colors sit on light backgrounds */
     pointer-events: none;
   }
+
+  /* Solid, non-blended background for Auth page */
+  .auth-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 1;            /* show true color */
+    mix-blend-mode: normal; /* no blending */
+    pointer-events: none;
+  }
   
   .pixel-float {
     animation: pixel-float 3s ease-in-out infinite;

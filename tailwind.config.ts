@@ -20,11 +20,19 @@ export default {
       },
       colors: {
         // SkillSwap Brand Colors
+        // Legacy (kept for backward compatibility)
         'mint-breeze': '#D7F9F1',
         'teal-pulse': '#329D9F',
         'soft-horizon': '#8BAAAD',
         'golden-spark': '#F1D869',
         'deep-indigo': '#215B8C',
+
+        // New Approved Palette
+        mint: '#D9FFDD',        // light mint green
+        teal: '#32936F',        // teal green
+        'soft-blue': '#8BA8DD', // soft blue
+        mustard: '#F7D589',     // mustard yellow
+        indigo: '#52528C',      // muted purple / indigo
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

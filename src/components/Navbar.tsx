@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
-import { Inbox as InboxIcon, Menu, X } from "lucide-react";
+import { MessageSquare, Menu, X, Home, Search, Repeat, Headset, Mailbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 
@@ -10,6 +10,8 @@ export const Navbar = () => {
   const location = useLocation();
   const [user, setUser] = useState<any | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [inboxCount, setInboxCount] = useState(0); // exchange/request notifications only
+  const [chatUnread, setChatUnread] = useState(0); // chat-only unread
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -22,6 +24,92 @@ export const Navbar = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUnreadBuckets = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    // Count unread chat messages (chat widget may also show its own badge)
+    const { count: messageCount, error: msgError } = await supabase
+      .from("messages")
+      .select("*", { count: 'exact', head: true })
+      .eq("receiver_id", session.user.id)
+      .eq("read", false);
+    
+    // Count pending exchange requests (inbox items)
+    const { count: exchangeCount, error: exchError } = await supabase
+      .from("exchanges")
+      .select("*", { count: 'exact', head: true })
+      .eq("provider_id", session.user.id)
+      .eq("status", "pending");
+    
+    setChatUnread(messageCount || 0);
+    setInboxCount(exchangeCount || 0);
+  };
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Fetch initial unread/inbox buckets
+    fetchUnreadBuckets();
+
+    // Real-time subscription for unread messages and exchange requests
+    const channel = supabase
+      .channel('navbar-unread-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadBuckets();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadBuckets();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'exchanges',
+          filter: `provider_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadBuckets();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'exchanges',
+          filter: `provider_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadBuckets();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const handleLogout = async () => {
     // Sign out from Supabase
@@ -40,10 +128,10 @@ export const Navbar = () => {
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   const navLinks = [
-    { path: "/dashboard", label: "Dashboard", icon: "🏠" },
-    { path: "/listings", label: "Listings", icon: "🔍" },
-    { path: "/exchanges", label: "Swaps", icon: "🔄" },
-    { path: "/support", label: "Support", icon: "💬" },
+    { path: "/dashboard", label: "Dashboard", icon: Home },
+    { path: "/listings", label: "Listings", icon: Search },
+    { path: "/exchanges", label: "Swaps", icon: Repeat },
+    { path: "/support", label: "Support", icon: Headset },
   ];
 
   return (
@@ -65,7 +153,7 @@ export const Navbar = () => {
                       : "hover:bg-primary/10 text-foreground"
                   }`}
                 >
-                  <span className="mr-2">{link.icon}</span>
+                  <link.icon className="inline-block mr-2 w-4 h-4" />
                   {link.label}
                 </Link>
               ))}
@@ -76,14 +164,20 @@ export const Navbar = () => {
           <div className="flex items-center gap-3">
             {user ? (
               <>
+                {/* Inbox icon (exchange requests only) */}
                 <Button
                   variant="ghost"
                   size="icon"
                   className="relative pixel-corners hover:bg-primary/10"
                   onClick={() => navigate('/inbox')}
-                  title="Inbox"
+                  title="Inbox (requests)"
                 >
-                  <InboxIcon className="w-5 h-5" />
+                  <Mailbox className={`w-5 h-5 ${inboxCount > 0 ? 'text-amber-500' : ''}`} />
+                  {inboxCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center pixel-corners">
+                      {inboxCount > 9 ? '9+' : inboxCount}
+                    </span>
+                  )}
                 </Button>
                 
                 <Button
@@ -137,7 +231,7 @@ export const Navbar = () => {
                     : "hover:bg-primary/10 text-foreground"
                 }`}
               >
-                <span className="mr-2">{link.icon}</span>
+                <link.icon className="inline-block mr-2 w-4 h-4" />
                 {link.label}
               </Link>
             ))}

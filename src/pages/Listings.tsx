@@ -109,10 +109,17 @@ export default function Listings() {
       return;
     }
 
-    // Check credits from localStorage
-    const creditsStr = localStorage.getItem('skillswap_credits');
-    const currentCredits = creditsStr ? parseInt(creditsStr) : 10;
-    
+    // Check credits from server (fallback to local)
+    let currentCredits = 10;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast({ title: "Not signed in", variant: "destructive" }); return; }
+    const { data: pData } = await (supabase as any).from('profiles').select('credits').eq('id', session.user.id).single();
+    if (pData && typeof (pData as any).credits === 'number') currentCredits = (pData as any).credits as number;
+    else {
+      const creditsStr = localStorage.getItem('skillswap_credits');
+      currentCredits = creditsStr ? parseFloat(creditsStr) : 10;
+    }
+
     if (currentCredits < 1) {
       toast({
         title: "💳 Insufficient Credits",
@@ -141,11 +148,10 @@ export default function Listings() {
         variant: "destructive"
       });
     } else {
-      // Deduct 1 credit
-      const newCredits = currentCredits - 1;
+      // Deduct 1 credit on server
+      const newCredits = parseFloat((currentCredits - 1).toFixed(2));
+      await (supabase as any).from('profiles').update({ credits: newCredits }).eq('id', session.user.id);
       localStorage.setItem('skillswap_credits', String(newCredits));
-      
-      // Trigger credits badge update by dispatching a custom event
       window.dispatchEvent(new Event('creditsChanged'));
       
       toast({

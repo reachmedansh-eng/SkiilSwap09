@@ -32,8 +32,6 @@ export default function Dashboard() {
       return;
     }
 
-    console.log('Fetching profile for user ID:', session.user.id);
-    console.log('User email:', session.user.email);
     setCurrentUserId(session.user.id);
 
     // Fetch profile
@@ -42,16 +40,11 @@ export default function Dashboard() {
       .select("username, xp, level, streak_count, avatar_url, bio")
       .eq("id", session.user.id)
       .single();
-
-    console.log('Dashboard fetched profile:', data);
-    console.log('Profile username:', data?.username);
     
     if (error) {
-      console.error('Error fetching profile:', error);
       
       // If profile doesn't exist, create it now
       if (error.code === 'PGRST116') {
-        console.log('Profile not found, creating new profile...');
         const defaultUsername = session.user.email?.split('@')[0] || 'user';
         
         const { data: newProfile, error: createError } = await supabase
@@ -67,10 +60,7 @@ export default function Dashboard() {
           .select()
           .single();
         
-        if (createError) {
-          console.error('Failed to create profile:', createError);
-        } else {
-          console.log('Profile created successfully:', newProfile);
+        if (!createError && newProfile) {
           setProfile(newProfile);
         }
       }
@@ -92,9 +82,6 @@ export default function Dashboard() {
     setProfile(null);
     setLoading(true);
     
-    console.log('=== Dashboard mounted/remounted ===');
-    console.log('Location key:', location.key);
-    
     fetchProfile();
   }, [navigate, location.key]); // Refetch whenever location changes
 
@@ -109,7 +96,6 @@ export default function Dashboard() {
             .select("username, xp, level, streak_count, avatar_url, bio")
             .eq("id", session.user.id)
             .single();
-          console.log('Dashboard refetched profile on visibility:', data);
           if (data) {
             setProfile(data);
           }
@@ -292,7 +278,11 @@ export default function Dashboard() {
                     <p className="font-semibold text-foreground">Complete 1 lesson today</p>
                     <p className="text-sm text-muted-foreground">+50 XP</p>
                   </div>
-                  <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 pixel-corners">
+                  <Button 
+                    size="sm" 
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 pixel-corners"
+                    onClick={() => navigate("/listings")}
+                  >
                     Start Now
                   </Button>
                 </div>

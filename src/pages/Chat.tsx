@@ -4,12 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { RetroBackground } from "@/components/RetroBackground";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Send } from "lucide-react";
+import { MessageSquare, Send, Paperclip, Smile, MoreVertical, Ban, Shield, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Profile {
   id: string;
@@ -36,7 +39,12 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const emojis = ['😊', '😂', '❤️', '👍', '👏', '🎉', '🔥', '💯', '✨', '🚀', '💪', '🙌', '👌', '😍', '🤔', '😎', '🎯', '💡'];
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -69,9 +77,8 @@ export default function Chat() {
     fetchMessages(selectedUser.id);
     markMessagesAsRead(selectedUser.id); // Mark as read when opening chat
 
-    // Set up real-time subscription
-  
-    const channel = supabase
+    // Set up real-time subscription for messages
+    const messagesChannel = supabase
       .channel('messages')
       .on(
         'postgres_changes',
@@ -89,8 +96,26 @@ export default function Chat() {
       )
       .subscribe();
 
+    // Set up real-time subscription for block status changes
+    const blockChannel = supabase
+      .channel('block_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'blocked_users',
+        },
+        () => {
+          // Re-check block status whenever blocked_users table changes
+          checkBlockStatus(selectedUser.id);
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(blockChannel);
     };
   }, [selectedUser, currentUserId]);
 
@@ -113,20 +138,49 @@ export default function Chat() {
   };
 
   const fetchUsers = async (currentUserId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, username, avatar_url")
-      .neq("id", currentUserId)
-      .limit(20);
-
-    if (data) {
-      setUsers(data);
+    // Fetch all other users excluding any blocked in either direction
+    const { data, error } = await (supabase as any)
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .neq('id', currentUserId)
+      .limit(50);
+    if (error) {
+      setLoading(false);
+      return;
     }
+    if (!data) { setUsers([]); setLoading(false); return; }
+    // Get blocked relationships
+    const { data: blockedRows } = await (supabase as any)
+      .from('blocked_users')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${currentUserId},blocked_id.eq.${currentUserId}`);
+    const blockedSet = new Set<string>();
+    blockedRows?.forEach(r => {
+      if (r.blocker_id === currentUserId) blockedSet.add(r.blocked_id);
+      if (r.blocked_id === currentUserId) blockedSet.add(r.blocker_id);
+    });
+    const filtered = data.filter(u => !blockedSet.has(u.id));
+    setUsers(filtered);
     setLoading(false);
   };
 
   const fetchMessages = async (otherUserId: string) => {
     if (!currentUserId) return;
+
+    // Check if user is blocked
+    await checkBlockStatus(otherUserId);
+    // Determine ordered pair for chat_resets lookup
+    const a = currentUserId < otherUserId ? currentUserId : otherUserId;
+    const b = currentUserId < otherUserId ? otherUserId : currentUserId;
+
+    // Fetch latest reset timestamp if any
+    const { data: resetRow } = await (supabase as any)
+      .from('chat_resets')
+      .select('reset_at')
+      .eq('user_a', a)
+      .eq('user_b', b)
+      .maybeSingle();
+    const resetAt = resetRow?.reset_at ? new Date(resetRow.reset_at) : null;
 
     const { data, error } = await supabase
       .from("messages")
@@ -140,9 +194,19 @@ export default function Chat() {
         description: error.message,
         variant: "destructive"
       });
-    } else if (data) {
-      setMessages(data);
+      return;
     }
+
+    let filtered = data || [];
+    if (resetAt) {
+      filtered = filtered.filter(m => new Date(m.created_at) > resetAt);
+      // If any older messages slipped through (reset not applied yet), try RPC purge once
+      if ((data?.length || 0) > 0 && filtered.length === 0) {
+        // Attempt a forced reset again to physically delete residual rows
+        await (supabase as any).rpc('reset_conversation', { p_user1: currentUserId, p_user2: otherUserId });
+      }
+    }
+    setMessages(filtered);
   };
 
   const markMessagesAsRead = async (otherUserId: string) => {
@@ -156,8 +220,96 @@ export default function Chat() {
       .eq("read", false);
   };
 
+  const checkBlockStatus = async (otherUserId: string) => {
+    if (!currentUserId) return;
+
+    const { data } = await (supabase as any)
+      .from("blocked_users")
+      .select("*")
+      .or(`and(blocker_id.eq.${currentUserId},blocked_id.eq.${otherUserId}),and(blocker_id.eq.${otherUserId},blocked_id.eq.${currentUserId})`)
+      .maybeSingle();
+
+    setIsBlocked(!!data);
+  };
+
+  const blockUser = async () => {
+    if (!currentUserId || !selectedUser) return;
+
+    const { error } = await (supabase as any)
+      .from("blocked_users")
+      .insert({
+        blocker_id: currentUserId,
+        blocked_id: selectedUser.id,
+        reason: "Blocked via chat"
+      });
+
+    if (error) {
+      toast({
+        title: "Failed to block user",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      setIsBlocked(true);
+      // Remove blocked user from list & clear selection
+      setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+      setSelectedUser(null);
+      toast({
+        title: "User blocked",
+        description: `You have blocked ${selectedUser.username}`,
+      });
+    }
+  };
+
+  const unblockUser = async () => {
+    if (!currentUserId || !selectedUser) return;
+
+    // @ts-ignore Suppress deep instantiation error from Supabase type inference
+    // @ts-ignore Suppress deep instantiation error from Supabase type inference; blocked_users table may be outside generated types
+    const { error } = await (supabase as any)
+      .from("blocked_users")
+      .delete()
+      .eq("blocker_id", currentUserId)
+      .eq("blocked_id", selectedUser.id);
+
+    if (error) {
+      toast({
+        title: "Failed to unblock user",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      setIsBlocked(false);
+      toast({
+        title: "User unblocked",
+        description: `You have unblocked ${selectedUser.username}`,
+      });
+    }
+  };
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedUser || !currentUserId || sending) return;
+
+    // Prevent sending if blocked
+    if (isBlocked) {
+      toast({
+        title: "Cannot send message",
+        description: "This conversation is blocked. No messages can be sent.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Double-check block status before sending
+    await checkBlockStatus(selectedUser.id);
+    if (isBlocked) {
+      toast({
+        title: "Cannot send message",
+        description: "This conversation is blocked. No messages can be sent.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setSending(true);
     const { error } = await supabase
@@ -180,6 +332,166 @@ export default function Chat() {
       await fetchMessages(selectedUser.id);
     }
     setSending(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !selectedUser || !currentUserId) return;
+    
+    const file = e.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `chat-files/${fileName}`;
+    
+    setUploadingFile(true);
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      toast({
+        title: "Upload failed",
+        description: uploadError.message,
+        variant: "destructive"
+      });
+      setUploadingFile(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    const fileMessage = `📎 File: ${file.name}\n${publicUrl}`;
+    
+    const { error } = await supabase.from("messages").insert({
+      sender_id: currentUserId,
+      receiver_id: selectedUser.id,
+      content: fileMessage,
+      read: false
+    });
+
+    if (error) {
+      toast({
+        title: "Failed to send file",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      await fetchMessages(selectedUser.id);
+    }
+
+    setUploadingFile(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+  };
+
+  // Parse and clean progress request from display
+  const parseProgressRequest = (text: string): { cleanText: string; exchangeId?: string; next?: number; total?: number } => {
+    const tagStart = text.indexOf('::progress_request::');
+    if (tagStart === -1) return { cleanText: text };
+    
+    const beforeTag = text.slice(0, tagStart).trim();
+    const tag = text.slice(tagStart).trim();
+    const match = /::progress_request::exchange=([^;]+);next=(\d+);total=(\d+)/.exec(tag);
+    
+    if (!match) return { cleanText: text };
+    
+    return { 
+      cleanText: beforeTag, 
+      exchangeId: match[1], 
+      next: Number(match[2]), 
+      total: Number(match[3]) 
+    };
+  };
+
+  const acceptProgress = async (exchangeId: string, next: number, total: number) => {
+    try {
+      const updates: any = { completed_sessions: next };
+      if (next >= total) {
+        updates.status = 'completed';
+      }
+      const { error } = await supabase.from('exchanges').update(updates).eq('id', exchangeId);
+      if (error) throw error;
+
+      // Award XP to both users for completing the session
+      const { error: xpError } = await (supabase as any).rpc('award_session_xp', {
+        p_exchange_id: exchangeId,
+        p_session_number: next
+      });
+      if (xpError) {
+        console.error('Failed to award XP:', xpError);
+      }
+
+      toast({
+        title: "Progress confirmed!",
+        description: `${next}/${total} sessions completed. +50 XP awarded! 🎉`
+      });
+
+      if (currentUserId && selectedUser) {
+        await supabase.from('messages').insert({
+          sender_id: currentUserId,
+          receiver_id: selectedUser.id,
+          content: `✅ Progress confirmed: ${next}/${total} sessions completed. Both earned +50 XP! 🎉`,
+          read: false
+        });
+        await fetchMessages(selectedUser.id);
+      }
+    } catch (e) {
+      toast({
+        title: "Failed to confirm progress",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteChatHistory = async () => {
+    if (!selectedUser || !currentUserId) return;
+    const confirmDelete = window.confirm(`Delete the entire chat for both you and ${selectedUser.username}? This cannot be undone.`);
+    if (!confirmDelete) return;
+    const { error } = await (supabase as any).rpc('reset_conversation', {
+      p_user1: currentUserId,
+      p_user2: selectedUser.id,
+    });
+    if (error) {
+      toast({ title: 'Failed to delete chat', description: error.message, variant: 'destructive' });
+      return;
+    }
+    await fetchMessages(selectedUser.id);
+    // Remove from user list so fresh start required later
+    setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+    setSelectedUser(null);
+    toast({ title: 'Chat cleared', description: 'All prior messages have been removed for both users.' });
+  };
+
+  // Render message with clickable links
+  const renderContent = (text: string) => {
+    const splitRegex = /(https?:\/\/[^\s]+)/g;
+    const isFullUrl = (part: string) => /^https?:\/\/[^\s]+$/i.test(part);
+    const parts = text.split(splitRegex);
+    return (
+      <span className="whitespace-pre-wrap">
+        {parts.map((part, i) =>
+          isFullUrl(part) ? (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:opacity-80 break-words"
+            >
+              {part}
+            </a>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </span>
+    );
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -238,19 +550,52 @@ export default function Chat() {
             {selectedUser ? (
               <>
                 <CardHeader className="border-b">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={selectedUser.avatar_url || undefined} />
-                      <AvatarFallback className="gradient-primary text-white">
-                        {selectedUser.username[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {selectedUser.username}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">Active now</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={selectedUser.avatar_url || undefined} />
+                        <AvatarFallback className="gradient-primary text-white">
+                          {selectedUser.username[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          {selectedUser.username}
+                          {isBlocked && (
+                            <Badge variant="destructive" className="text-xs">
+                              <Ban className="w-3 h-3 mr-1" />
+                              Blocked
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">Active now</p>
+                      </div>
                     </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="w-5 h-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {isBlocked ? (
+                          <>
+                            <DropdownMenuItem onClick={unblockUser} className="cursor-pointer">
+                              <Shield className="w-4 h-4 mr-2" />
+                              Unblock User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={deleteChatHistory} className="cursor-pointer text-destructive">
+                              <X className="w-4 h-4 mr-2" /> Delete Chat History
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem onClick={blockUser} className="cursor-pointer text-destructive">
+                            <Ban className="w-4 h-4 mr-2" />
+                            Block User
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardHeader>
                 
@@ -258,25 +603,44 @@ export default function Chat() {
                   <div className="space-y-4">
                     {messages.map((msg) => {
                       const isOwnMessage = msg.sender_id === currentUserId;
+                      const parsed = parseProgressRequest(msg.content);
+                      const hasProgressRequest = parsed.exchangeId && !isOwnMessage;
+                      
                       return (
                         <div
                           key={msg.id}
                           className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div
-                            className={`max-w-[70%] rounded-lg p-3 ${
-                              isOwnMessage
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
-                            }`}
-                          >
-                            <p className="break-words">{msg.content}</p>
-                            <p className={`text-xs mt-1 ${
-                              isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                            }`}>
-                              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
+                          {hasProgressRequest ? (
+                            <div className="max-w-[85%] rounded-lg p-3 bg-amber-50 border-2 border-amber-300">
+                              <p className="break-words text-amber-900 font-medium mb-2">{parsed.cleanText}</p>
+                              <Button 
+                                size="sm" 
+                                onClick={() => acceptProgress(parsed.exchangeId!, parsed.next!, parsed.total!)}
+                                className="pixel-corners"
+                              >
+                                Accept
+                              </Button>
+                              <p className="text-xs text-amber-700 mt-2">
+                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          ) : (
+                            <div
+                              className={`max-w-[85%] rounded-lg p-3 ${
+                                isOwnMessage
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted'
+                              }`}
+                            >
+                              <p className="break-words break-all">{renderContent(msg.content)}</p>
+                              <p className={`text-xs mt-1 ${
+                                isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                              }`}>
+                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -284,17 +648,68 @@ export default function Chat() {
                   </div>
                 </ScrollArea>
                 
-                <div className="border-t p-4 flex gap-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    disabled={sending}
-                  />
-                  <Button size="icon" onClick={sendMessage} disabled={sending || !newMessage.trim()}>
-                    <Send className="w-4 h-4" />
-                  </Button>
+                <div className="border-t p-4">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept="image/*,.pdf,.doc,.docx,.txt"
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile || sending}
+                      title="Upload file"
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                    
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Add emoji"
+                          disabled={sending}
+                        >
+                          <Smile className="w-4 h-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-2">
+                        <div className="grid grid-cols-6 gap-2">
+                          {emojis.map((emoji, idx) => (
+                            <Button
+                              key={idx}
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-xl hover:scale-125 transition-transform"
+                              onClick={() => insertEmoji(emoji)}
+                            >
+                              {emoji}
+                            </Button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <Input
+                      placeholder={isBlocked ? "Blocked - cannot send messages" : uploadingFile ? "Uploading..." : "Type your message..."}
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      disabled={sending || uploadingFile || isBlocked}
+                      className="flex-1"
+                    />
+                    <Button 
+                      size="icon" 
+                      onClick={sendMessage} 
+                      disabled={sending || uploadingFile || !newMessage.trim() || isBlocked}
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : (
