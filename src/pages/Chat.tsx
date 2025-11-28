@@ -41,6 +41,7 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState<Profile[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -155,12 +156,20 @@ export default function Chat() {
       .select('blocker_id, blocked_id')
       .or(`blocker_id.eq.${currentUserId},blocked_id.eq.${currentUserId}`);
     const blockedSet = new Set<string>();
+    const blockedByCurrentSet = new Set<string>();
     blockedRows?.forEach(r => {
-      if (r.blocker_id === currentUserId) blockedSet.add(r.blocked_id);
+      if (r.blocker_id === currentUserId) {
+        blockedSet.add(r.blocked_id);
+        blockedByCurrentSet.add(r.blocked_id);
+      }
       if (r.blocked_id === currentUserId) blockedSet.add(r.blocker_id);
     });
+    
     const filtered = data.filter(u => !blockedSet.has(u.id));
+    const blockedUsersList = data.filter(u => blockedByCurrentSet.has(u.id));
+    
     setUsers(filtered);
+    setBlockedUsers(blockedUsersList);
     setLoading(false);
   };
 
@@ -251,9 +260,9 @@ export default function Chat() {
       });
     } else {
       setIsBlocked(true);
-      // Remove blocked user from list & clear selection
+      // Move user from active list to blocked list
       setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
-      setSelectedUser(null);
+      setBlockedUsers(prev => [...prev, selectedUser]);
       toast({
         title: "User blocked",
         description: `You have blocked ${selectedUser.username}`,
@@ -280,6 +289,9 @@ export default function Chat() {
       });
     } else {
       setIsBlocked(false);
+      // Move user from blocked list back to active list
+      setBlockedUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+      setUsers(prev => [...prev, selectedUser]);
       toast({
         title: "User unblocked",
         description: `You have unblocked ${selectedUser.username}`,
@@ -515,31 +527,67 @@ export default function Chat() {
             </CardHeader>
             <ScrollArea className="h-[calc(100vh-18rem)]">
               <CardContent className="space-y-2">
-                {users.length === 0 ? (
+                {users.length === 0 && blockedUsers.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
                     No users yet. Invite friends to join!
                   </p>
                 ) : (
-                  users.map((user) => (
-                    <div
-                      key={user.id}
-                      onClick={() => setSelectedUser(user)}
-                      className={`flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${
-                        selectedUser?.id === user.id ? 'bg-muted' : ''
-                      }`}
-                    >
-                      <Avatar>
-                        <AvatarImage src={user.avatar_url || undefined} />
-                        <AvatarFallback className="gradient-primary text-white">
-                          {user.username[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold">{user.username}</p>
-                        <p className="text-sm text-muted-foreground">Click to chat</p>
-                      </div>
-                    </div>
-                  ))
+                  <>
+                    {/* Active Users */}
+                    {users.length > 0 && (
+                      <>
+                        <p className="text-xs font-semibold text-muted-foreground px-3 py-2">ACTIVE CHATS</p>
+                        {users.map((user) => (
+                          <div
+                            key={user.id}
+                            onClick={() => setSelectedUser(user)}
+                            className={`flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${
+                              selectedUser?.id === user.id ? 'bg-muted' : ''
+                            }`}
+                          >
+                            <Avatar>
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback className="gradient-primary text-white">
+                                {user.username[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="font-semibold">{user.username}</p>
+                              <p className="text-sm text-muted-foreground">Click to chat</p>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    
+                    {/* Blocked Users */}
+                    {blockedUsers.length > 0 && (
+                      <>
+                        <p className="text-xs font-semibold text-destructive px-3 py-2 mt-4">BLOCKED USERS</p>
+                        {blockedUsers.map((user) => (
+                          <div
+                            key={user.id}
+                            onClick={() => setSelectedUser(user)}
+                            className={`flex items-center gap-3 p-3 rounded-lg hover:bg-destructive/10 cursor-pointer transition-colors opacity-60 ${
+                              selectedUser?.id === user.id ? 'bg-destructive/20' : ''
+                            }`}
+                          >
+                            <Avatar className="opacity-60">
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback className="bg-destructive/50 text-white">
+                                {user.username[0].toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="font-semibold">{user.username}</p>
+                              <p className="text-sm text-destructive">Blocked</p>
+                            </div>
+                            <Ban className="w-4 h-4 text-destructive" />
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </>
                 )}
               </CardContent>
             </ScrollArea>
